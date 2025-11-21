@@ -24,7 +24,10 @@
                                 </svg>
                             </button>
                         </div>
-                        <UButton v-if="session?.user.id" @click="logout" class="w-[70px]" color="error">Logout</UButton>
+                        <div class="flex gap-2">
+                            <UButton v-if="session?.user.id" @click="logout" class="w-[70px]" color="error">Logout</UButton>
+                            <UserForm v-if="session?.user.id" colorButton="secondary"/>
+                        </div>
                     </div>
 
                     <div ref="nav">
@@ -34,10 +37,9 @@
                             <a href="#" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Relatórios</a>
                         </nav>
                     </div>
-
                 </div>
-                <div ref="footer" class="p-1 ">
-                    <NuxtImg src="/logo.jpg" class="object-cover rounded"/>
+                <div ref="footer" class="p-1">
+                    <NuxtImg src="/logo.jpg" class="object-cover rounded" />
                 </div>
             </div>
         </Transition>

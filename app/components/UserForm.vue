@@ -1,21 +1,21 @@
 <template>
     <UModal :class="[`w-[${props?.buttonSize}]`]" title="Configurações do Usuário" description="Configurações relacionadas ao usuário">
-        <UButton label="Configurações do Usuário" color="neutral" variant="subtle" />
+        <UButton :label="props?.label" :color="props?.colorButton" variant="subtle" />
 
         <template #body>
             <UForm :schema="schema" :state="form" class="flex flex-col gap-2 space-y-4" @submit="onSubmit">
                 <div class="flex flex-row gap-4">
+                    <UFormField label="Nome" name="name">
+                        <UInput v-model="form.name" />
+                    </UFormField>
+
                     <UFormField label="Email" name="email">
                         <UInput v-model="form.email" />
-                    </UFormField>
-    
-                    <UFormField label="Password" name="password">
-                        <UInput v-model="form.password" type="password" />
                     </UFormField>
                 </div>
 
                 <div ref="footer" class="flex gap-2">
-                    <UButton type="submit" class="w-fit"> Submit </UButton>
+                    <UButton type="submit" class="w-fit" :loading="isSaving" :disabled="isSaving"> Salvar </UButton>
                 </div>
             </UForm>
         </template>
@@ -25,44 +25,75 @@
 <script setup lang="ts">
 import * as v from 'valibot'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import { authClient } from '~/lib/auth-client'
 
+// ---- Schema ----
 const schema = v.object({
+    name: v.string(),
     email: v.pipe(v.string(), v.email('Informe um email válido')),
-    password: v.pipe(v.string(), v.minLength(8, 'Must be at least 8 characters')),
 })
 
 type Schema = v.InferOutput<typeof schema>
 
-const form = reactive({
+// ---- Reactive Form ----
+const form = reactive<Schema>({
+    name: '',
     email: '',
-    password: '',
 })
+
+// ---- Estados ----
+const isSaving = ref(false)
 
 const toast = useToast()
+
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-    toast.add({ title: 'Success', description: 'Informações foram salvas com sucesso.', color: 'success' })
-    console.log(event.data)
+    try {
+        isSaving.value = true
+
+        // Simulação de chamada para salvar
+        await new Promise((res) => setTimeout(res, 1000))
+
+        toast.add({
+            title: 'Success',
+            description: 'Informações foram salvas com sucesso.',
+            color: 'success',
+        })
+
+        console.log(event.data)
+    } finally {
+        isSaving.value = false
+    }
 }
 
+// ---- Props ----
 interface Props {
-    buttonSize?: string
+    buttonSize?: string,
+    label?: string,
+    colorButton?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'neutral',
 }
-
-// defineProps com tipagem + withDefaults para valores padrão
 const props = withDefaults(defineProps<Props>(), {
     buttonSize: '300px',
+    label: 'Configurações',
+    colorButton: 'neutral',
 })
 
+// ---- Carregar dados do usuário ----
 const reloadUser = async () => {
     try {
-        const { data: userData, error } = await useFetch('/api/user/user', {
-            method: 'GET',
-        })
-        debugger
+        const { data: session } = await authClient.useSession(useFetch)
 
-        if (error.value) {
-            throw new Error('Failed to fetch user data')
-        }
+        const payload = { id: session.value?.user.id }
+
+        const { data: userData, error } = await useFetch('/api/user/user', {
+            method: 'POST',
+            body: payload,
+        })
+
+        if (error.value) throw new Error('Failed to fetch user data')
+
+        // preencher reactive
+        form.name = userData.value?.name || ''
+        form.email = userData.value?.email || ''
     } catch (error) {
         console.error('Error fetching user data:', error)
     }
@@ -71,5 +102,4 @@ const reloadUser = async () => {
 onMounted(async () => {
     reloadUser()
 })
-
 </script>
