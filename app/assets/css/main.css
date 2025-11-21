@@ -1,0 +1,35 @@
+/* assets/css/main.css */
+
+/* 1. Importa o Tailwind CSS (base, components, utilities) */
+@import 'tailwindcss';
+
+/* 2. Importa os estilos de base e variáveis do Nuxt UI */
+@import '@nuxt/ui';
+:root {
+    /* Cores Primárias (Exemplo: usaremos 'indigo' como primária) */
+    /* Estas variáveis refletem as cores que você usará no seu tema. */
+    --color-primary-50: #EEF2FF;
+    --color-primary-100: #E0E7FF;
+    --color-primary-500: #6366F1;
+    --color-primary-600: #4F46E5;
+    --color-primary-700: #4338CA;
+
+    /* Cores Secundárias (Exemplo: cinzas para fundo/texto) */
+    --color-gray-50: #F9FAFB;
+    --color-gray-700: #374151;
+    --color-gray-900: #111827;
+
+    /* Espaçamento (Opcional, se precisar de espaçamentos específicos) */
+    --space-xl: 2rem;
+}
+
+
+/* 4. Estilos Globais (Opcional, mas recomendado) */
+/* Aplicamos as variáveis a elementos HTML básicos */
+body {
+    background-color: var(--color-gray-700);
+    color: var(--color-gray-900);
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif
+}
