@@ -2,6 +2,7 @@
     <div class="space-y-2 p-2">
         <UContainer class="h-40 rounded border border-gray-300">
             <span>aaaa</span>
+            <UserForm buttonSize="400px" />
         </UContainer>
     </div>
 </template>
