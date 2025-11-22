@@ -1,34 +1,34 @@
 <template>
     <div class="space-y-2 p-2">
-        <UContainer class="h-40 rounded border border-gray-300">
-            <span>aaaa</span>
-            <UserForm buttonSize="400px" />
-        </UContainer>
+        <div class="flex gap-2 flex-wrap">
+            <template v-if="loading">
+                <USkeleton v-for="n in 4" :key="n" class="h-[230px] w-[400px] rounded-xl" />
+            </template>
+
+            <template v-else>
+                <CardBarber v-for="barber in barberservices || []" :key="barber.id" :name="barber.name" :image="barber.image" :description="barber.description" :price="barber.price" :hour="barber.duration" />
+            </template>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 
 definePageMeta({
     layout: 'default',
 })
 
-const updateName = async () => {
-    const payload = {
-        id: 'vkEQY8yEclJOtUrB8I6flcrndxvmrQcW',
-        name: 'Igor Fronza Final 19',
-    }
+const {
+    data: barberservices,
+    pending: loading,
+    error,
+} = await useFetch('/api/barberservices/barberservices-list', {
+    default: () => [],
+    lazy: true,
+})
 
-    try {
-        const response = await useFetch('/api/user/user-update', {
-            method: 'POST', // O método POST
-            body: payload,
-        })
-
-    } catch (error) {
-        alert('Falha ao atualizar o usuário.')
-    }
+if (error.value) {
+    console.error('Error fetching barber services:', error.value)
 }
-
-
 </script>

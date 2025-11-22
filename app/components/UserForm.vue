@@ -1,25 +1,21 @@
 <template>
-    <UModal :class="[`w-[${props?.buttonSize}]`]" title="Configurações do Usuário" description="Configurações relacionadas ao usuário">
-        <UButton :label="props?.label" :color="props?.colorButton" variant="subtle" />
+    <Modal label="Configurações" modal-title="Configurações do Usuário" description="Configurações relacionadas ao usuário">
+        <UForm :schema="schema" :state="form" class="flex flex-col gap-2 space-y-4" @submit="onSubmit">
+            <div class="flex flex-row gap-4">
+                <UFormField label="Nome" name="name">
+                    <UInput v-model="form.name" required />
+                </UFormField>
 
-        <template #body>
-            <UForm :schema="schema" :state="form" class="flex flex-col gap-2 space-y-4" @submit="onSubmit">
-                <div class="flex flex-row gap-4">
-                    <UFormField label="Nome" name="name">
-                        <UInput v-model="form.name" />
-                    </UFormField>
+                <UFormField label="Email" name="email">
+                    <UInput v-model="form.email" />
+                </UFormField>
+            </div>
 
-                    <UFormField label="Email" name="email">
-                        <UInput v-model="form.email" />
-                    </UFormField>
-                </div>
-
-                <div ref="footer" class="flex gap-2">
-                    <UButton type="submit" class="w-fit" :loading="isSaving" :disabled="isSaving"> Salvar </UButton>
-                </div>
-            </UForm>
-        </template>
-    </UModal>
+            <div ref="footer" class="flex gap-2">
+                <UButton type="submit" class="w-fit" :loading="isSaving" :disabled="isSaving"> Salvar </UButton>
+            </div>
+        </UForm>
+    </Modal>
 </template>
 
 <script setup lang="ts">
@@ -67,9 +63,9 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
 // ---- Props ----
 interface Props {
-    buttonSize?: string,
-    label?: string,
-    colorButton?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'neutral',
+    buttonSize?: string
+    label?: string
+    colorButton?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'neutral'
 }
 const props = withDefaults(defineProps<Props>(), {
     buttonSize: '300px',
