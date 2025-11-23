@@ -14,7 +14,9 @@
     "@nuxt/ui": "^4.2.0",
     "@nuxtjs/tailwindcss": "^6.14.0",
     "@prisma/client": "^6.19.0",
+    "ag-grid-vue3": "^34.3.1",
     "better-auth": "^1.3.34",
+    "collect.js": "^4.36.1",
     "criptoya": "^1.0.0",
     "crypto": "^1.0.1",
     "dotenv": "^17.2.3",
@@ -23,7 +25,8 @@
     "prisma": "^6.19.0",
     "valibot": "^1.1.0",
     "vue": "^3.5.24",
-    "vue-router": "^4.6.3"
+    "vue-router": "^4.6.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

@@ -1,5 +1,11 @@
 <template>
     <div ref="booking">
-        <span>meus agendamentos</span>
+        <Grid @selectedRows="selected = $event" title="Agendamentos" />
     </div>
 </template>
+
+<script setup>
+
+const selected = ref([])
+
+</script>
