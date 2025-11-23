@@ -2,13 +2,13 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Try Prisma Accelerate: https://prisly.d/cli/accelerate-init
 generator client {
   provider      = "prisma-client-js"
-  // Adicione esta linha: Força a inclusão do binário no build.
+  // Garante a inclusão do binário para o ambiente nativo (local)
   binaryTargets = ["native"]
-  // Se for fazer deploy em ambiente Linux (ex: Vercel, Netlify), 
-  // pode ser necessário adicionar "debian-openssl-1.1.x" ou "rhel-openssl-1.0.x"
+  // Se for ambiente Linux (ex: Vercel, Netlify), descomente o abaixo:
+  // binaryTargets = ["native", "debian-openssl-1.1.x"] 
 }
 
 datasource db {
@@ -16,18 +16,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// -----------------------------------------------------------------------
+// MODELOS DE AUTENTICAÇÃO E USUÁRIO
+// -----------------------------------------------------------------------
+
 model User {
-  id            String       @id @default(cuid())
+  id            String   @id @default(cuid())
   name          String
-  email         String    @unique
+  email         String   @unique
   password      String?
-  token         String? // ← aqui o token será armazenado quando logar
-  emailVerified Boolean   @default(false)
+  token         String?
+  emailVerified Boolean  @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+
+  // RELAÇÃO INVERSA: Um usuário pode ter vários Checkins
+  checkins Checkin[]
 
   @@map("user")
 }
@@ -77,6 +85,9 @@ model Verification {
   @@map("verification")
 }
 
+// -----------------------------------------------------------------------
+// MODELOS DE NEGÓCIO (SERVIÇOS E AGENDAMENTOS)
+// -----------------------------------------------------------------------
 
 model BarberService {
   id          String   @id @default(cuid())
@@ -84,9 +95,28 @@ model BarberService {
   description String?
   image       String?
   price       Float
-  duration    Int      // duração em minutos
+  duration    Int // duração em minutos
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
+  // RELAÇÃO INVERSA: Um serviço pode ter muitos Checkins (reservas)
+  checkins Checkin[]
+
   @@map("barber_service")
+}
+
+model Checkin {
+  id         String    @id @default(cuid())
+  userId     String
+  serviceId  String
+  date       DateTime // Data e hora do agendamento/check-in
+  canceled   Boolean   @default(false)
+  canceledAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt
+
+  service BarberService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("checkin")
 }

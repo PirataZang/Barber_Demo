@@ -13,20 +13,32 @@
             </div>
 
             <div class="absolute bottom-5 right-5">
-                <u-button color="neutral">Agendar</u-button>
+                <UButton v-if="!session?.user.id" @click="login" color="neutral">Login</UButton>
+                <CheckinModal v-if="session?.user.id" :userId="session.user.id" :time="props.hour" :serviceId="props.id"/>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
+import { authClient } from '~/lib/auth-client'
+
 // Não há mudanças aqui
 interface Props {
+    id: string
     name: string
     image: any
     description: any
     price: any
     hour: any
+}
+
+const { data: session } = await authClient.useSession(useFetch)
+
+const login = () => {
+    authClient.signIn.social({
+        provider: 'google',
+    })
 }
 
 const props = defineProps<Props>()

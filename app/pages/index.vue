@@ -6,7 +6,7 @@
             </template>
 
             <template v-else>
-                <CardBarber v-for="barber in barberservices || []" :key="barber.id" :name="barber.name" :image="barber.image" :description="barber.description" :price="barber.price" :hour="barber.duration" />
+                <CardBarber v-for="barber in barberservices || []" :key="barber.id" :id="barber.id" :name="barber.name" :image="barber.image" :description="barber.description" :price="barber.price" :hour="barber.duration" />
             </template>
         </div>
     </div>
