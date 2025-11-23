@@ -10,7 +10,7 @@
                             :class="[
                                 'rounded-xl shadow-2xl transition-all',
                                 backgroundColor, // Fundo customizado
-                                `w-[${modalWidth}]`, // 💡 APLICAÇÃO DA LARGURA AQUI
+                                modalWidth, // 💡 APLICAÇÃO DA LARGURA AQUI
                                 panelClass, // 💡 CLASSE EXTRA
                             ]"
                         >
@@ -83,7 +83,7 @@ const props = withDefaults(defineProps<Props>(), {
     // Padrões do Modal
     modalTitle: 'Janela Personalizada',
     backgroundColor: 'bg-gray-800', // Padrão: Cinza Escuro (chumbo)
-    modalWidth: 'max-w-lg', // 💡 Padrão de Largura
+    modalWidth: 'w-[300px]', // 💡 Padrão de Largura
     panelClass: '',
     customWrapperClass: '',
     closeOnOutsideClick: true,

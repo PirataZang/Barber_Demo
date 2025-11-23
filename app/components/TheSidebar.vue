@@ -1,7 +1,7 @@
 <template>
     <div>
         <Transition name="fade">
-            <div v-if="isOpen" @click="$emit('closeSidebar')" class="absolute inset-0 bg-opacity-50 z-40"></div>
+            <div v-if="isOpen" @click="$emit('closeSidebar')" class="absolute inset-0 bg-black opacity-85 z-40"></div>
         </Transition>
 
         <Transition name="slide">
@@ -32,7 +32,8 @@
 
                     <div ref="nav">
                         <nav class="space-y-3">
-                            <a href="#" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Dashboard</a>
+                            <NuxtLink to="/" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">dashboard</NuxtLink>
+                            <NuxtLink to="/booking" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Agendamentos</NuxtLink>
                             <a href="#" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Projetos</a>
                             <a href="#" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Relatórios</a>
                         </nav>

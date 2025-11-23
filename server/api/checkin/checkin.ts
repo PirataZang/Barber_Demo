@@ -2,7 +2,7 @@ import { prisma } from '~/lib/prisma'
 import { createError, defineEventHandler, getQuery } from 'h3'
 
 interface Query {
-    date: string // Espera uma string ISO, Ex: '2025-11-23T00:00:00.000Z'
+    date: string
 }
 
 export default defineEventHandler(async (event) => {
@@ -17,13 +17,18 @@ export default defineEventHandler(async (event) => {
         }
 
         const selectedDate = new Date(query.date)
-        const startOfDay = new Date(Date.UTC(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 0, 0, 0, 0))
-        const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+
+        const startOfDay = selectedDate
+
+        const endOfDay = new Date(startOfDay)
+        endOfDay.setDate(endOfDay.getDate() + 1)
+        endOfDay.setMilliseconds(endOfDay.getMilliseconds() - 1)
+
         const checkins = await prisma.checkin.findMany({
             where: {
                 date: {
-                    gte: startOfDay, // Ex: 2025-11-23T00:00:00.000Z
-                    lt: endOfDay, // Less Than (Menor que) - Ex: 2025-11-24T00:00:00.000Z
+                    gte: startOfDay, // Greater Than or Equal (Maior ou igual)
+                    lte: endOfDay, // Less Than or Equal (Menor ou igual)
                 },
             },
             select: {
@@ -31,6 +36,8 @@ export default defineEventHandler(async (event) => {
                 serviceId: true,
             },
         })
+
+        // 3. Retorna os dados como JSON
         return checkins
     } catch (error) {
         console.error('Erro ao buscar checkins no banco de dados:', error)
