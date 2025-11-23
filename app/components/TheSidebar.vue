@@ -33,7 +33,7 @@
                     <div ref="nav">
                         <nav class="space-y-3">
                             <NuxtLink to="/" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">dashboard</NuxtLink>
-                            <NuxtLink v-if="session?.user.id" to="/booking" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Agendamentos</NuxtLink>
+                            <NuxtLink v-if="session?.user.id && session?.user.isAdmin" to="/booking" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Agendamentos</NuxtLink>
                         </nav>
                     </div>
                 </div>
