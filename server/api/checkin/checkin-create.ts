@@ -1,42 +1,27 @@
 import { prisma } from '~/lib/prisma'
-import { createError, defineEventHandler, getQuery } from 'h3'
-
-interface Query {
-    date: string // Espera uma string ISO, Ex: '2025-11-23T00:00:00.000Z'
-}
 
 export default defineEventHandler(async (event) => {
-    try {
-        const query = getQuery<Query>(event)
+    const body = await readBody(event)
 
-        if (!query.date) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'A data é obrigatória (parâmetro "date").',
-            })
-        }
+    const existingCheckin = await prisma.checkin.findFirst({
+        where: {
+            date: body.date,
+            serviceId: body.barberId,
+        },
+    })
 
-        const selectedDate = new Date(query.date)
-        const startOfDay = new Date(Date.UTC(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 0, 0, 0, 0))
-        const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
-        const checkins = await prisma.checkin.findMany({
-            where: {
-                date: {
-                    gte: startOfDay, // Ex: 2025-11-23T00:00:00.000Z
-                    lt: endOfDay, // Less Than (Menor que) - Ex: 2025-11-24T00:00:00.000Z
-                },
-            },
-            select: {
-                date: true,
-                serviceId: true,
-            },
-        })
-        return checkins
-    } catch (error) {
-        console.error('Erro ao buscar checkins no banco de dados:', error)
+    if (existingCheckin) {
         throw createError({
-            statusCode: 500,
-            statusMessage: 'Não foi possível buscar os agendamentos existentes.',
+            statusCode: 400,
+            statusMessage: 'Já existe um agendamento para este horário.',
         })
     }
+
+    const checkin = await prisma.checkin.create({
+        data: {
+            ...body,
+        },
+    })
+
+    return checkin
 })

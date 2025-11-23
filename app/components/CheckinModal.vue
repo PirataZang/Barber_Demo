@@ -1,13 +1,15 @@
 <template>
-    <Modal label="Agendar" button-variant="solid" button-color="neutral" modal-title="Agendamentos" modal-width="w-[500px]">
+    <Modal label="Agendar" button-variant="solid" button-color="neutral" modal-title="Agendamentos" modal-width="w-auto max-w-sm">
         <UForm :schema="schema" :state="form" class="flex flex-col gap-2 space-y-4" @submit="onSubmit">
             <UFormField label="Selecione a Data" name="date">
-                <UCalendar v-model="form.date" :is-date-unavailable="isDateUnavailable" color="neutral" class="text-white" />
+                <UCalendar locale="pt-BR" :year-controls="false" v-model="form.date" :is-date-unavailable="isDateUnavailable" color="neutral" class="text-white" />
             </UFormField>
 
             <ClientOnly>
                 <UFormField label="Selecione o Horário" name="time">
-                    <USelect class="w-48" v-model="form.time" :items="availableTimes" placeholder="Selecione o horário" value-attribute="value" option-attribute="label" :loading="pending" />
+                    <div class="flex gap-2 overflow-x-auto time-scroll-hide whitespace-nowrap py-1">
+                        <UButton v-for="timeOption in availableTimes" :key="timeOption.value" :label="timeOption.label" :variant="form.time === timeOption.value ? 'solid' : 'outline'" color="neutral" @click="form.time = timeOption.value" size="lg" class="flex-shrink-0" />
+                    </div>
                     <span v-if="pending" class="text-xs text-gray-400">Carregando horários...</span>
                     <span v-else-if="availableTimes.length === 0" class="text-xs text-red-400">Nenhum horário disponível para esta data.</span>
                 </UFormField>
@@ -17,7 +19,7 @@
                 </template>
             </ClientOnly>
 
-            <UButton type="submit" label="Salvar Agendamento" :loading="isSaving" block />
+            <UButton type="submit" label="Salvar Agendamento" size="xl" variant="subtle" color="neutral" :loading="isSaving" block />
         </UForm>
     </Modal>
 </template>
@@ -37,8 +39,18 @@ const toast = useToast()
 const today = new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())
 
 const isDateUnavailable = (date: DateValue) => {
-    return date.compare(today) < 0
+    if (date.compare(today) < 0) {
+        return true
+    }
+    const jsDate = date.toDate(new Date().timeZone || 'UTC')
+    if (jsDate.getDay() < 0 || jsDate.getDay() >= 6) {
+        return true
+    }
+    return false
 }
+
+// Nota: A lista de feriados (holidays2025) e a função isHoliday()
+// foram removidas, conforme sua solicitação.
 
 const generateAllPossibleTimes = (startHour = 8, endHour = 18, intervalMinutes: number) => {
     const times = []
@@ -93,13 +105,8 @@ const availableTimes = computed(() => {
     for (const checkin of bookedCheckins.value) {
         const checkinDate = new Date(checkin.date)
 
-        // 🚀 CORREÇÃO: Usar getUTCHours e getUTCMinutes
-        // Isso lê a hora diretamente da string ISO (que você formatou para ser o horário local desejado)
         const hour = checkinDate.getUTCHours().toString().padStart(2, '0')
         const minute = checkinDate.getUTCMinutes().toString().padStart(2, '0')
-
-        // Exemplo: Se checkin.date é '2025-11-23T14:00:00.000Z',
-        // getUTCHours() retorna 14. occupiedTimes recebe "14:00".
         occupiedTimes.add(`${hour}:${minute}`)
     }
 
@@ -168,6 +175,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             description: 'Agendamento salvo com sucesso.',
             color: 'success',
         })
+        isSaving.value = false
+        return navigateTo('/booking')
     } catch (error) {
         toast.add({
             title: 'Erro',
@@ -180,3 +189,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     }
 }
 </script>
+
+<style scoped>
+.time-scroll-hide {
+    /* Esconde a barra de rolagem no Firefox */
+    scrollbar-width: none;
+}
+</style>

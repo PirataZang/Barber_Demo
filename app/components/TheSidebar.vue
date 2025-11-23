@@ -26,16 +26,14 @@
                         </div>
                         <div class="flex gap-2">
                             <UButton v-if="session?.user.id" @click="logout" class="w-[70px]" color="error">Logout</UButton>
-                            <UserForm v-if="session?.user.id" :id="session?.user.id" colorButton="secondary"/>
+                            <UserForm v-if="session?.user.id" :id="session?.user.id" colorButton="secondary" />
                         </div>
                     </div>
 
                     <div ref="nav">
                         <nav class="space-y-3">
                             <NuxtLink to="/" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">dashboard</NuxtLink>
-                            <NuxtLink to="/booking" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Agendamentos</NuxtLink>
-                            <a href="#" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Projetos</a>
-                            <a href="#" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Relatórios</a>
+                            <NuxtLink v-if="session?.user.id" to="/booking" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Agendamentos</NuxtLink>
                         </nav>
                     </div>
                 </div>
