@@ -26,7 +26,7 @@
                         </div>
                         <div class="flex gap-2">
                             <UButton v-if="session?.user.id" @click="logout" class="w-[70px]" color="error">Logout</UButton>
-                            <UserForm v-if="session?.user.id" colorButton="secondary"/>
+                            <UserForm v-if="session?.user.id" :id="session?.user.id" colorButton="secondary"/>
                         </div>
                     </div>
 

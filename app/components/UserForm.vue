@@ -1,14 +1,16 @@
 <template>
-    <Modal label="Configurações" button-variant="subtle" modal-title="Configurações do Usuário" description="Configurações relacionadas ao usuário">
+    <Modal label="Configurações" button-variant="subtle" modal-title="Configurações do Usuário" @open="reloadUser"  description="Configurações relacionadas ao usuário">
         <UForm :schema="schema" :state="form" class="flex flex-col gap-2 space-y-4" @submit="onSubmit">
             <div class="flex flex-row gap-4">
-                <UFormField label="Nome" name="name">
-                    <UInput v-model="form.name" required />
-                </UFormField>
+                <ClientOnly>
+                    <UFormField label="Nome" name="name">
+                        <UInput v-model="form.name" required />
+                    </UFormField>
 
-                <UFormField label="Email" name="email">
-                    <UInput v-model="form.email" />
-                </UFormField>
+                    <UFormField label="Email" name="email">
+                        <UInput disabled v-model="form.email" />
+                    </UFormField>
+                </ClientOnly>
             </div>
 
             <div ref="footer" class="flex gap-2">
@@ -46,6 +48,14 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     try {
         isSaving.value = true
 
+        const user = await useFetch('/api/user/user-update', {
+            method: 'POST',
+            body: {
+                id: (await authClient.getSession()).data?.user.id,
+                name: event.data.name,
+            },
+        })
+
         // Simulação de chamada para salvar
         await new Promise((res) => setTimeout(res, 1000))
 
@@ -63,6 +73,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
 // ---- Props ----
 interface Props {
+    id: any
     buttonSize?: string
     label?: string
     colorButton?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'neutral'
@@ -76,9 +87,11 @@ const props = withDefaults(defineProps<Props>(), {
 // ---- Carregar dados do usuário ----
 const reloadUser = async () => {
     try {
-        const { data: session } = await authClient.useSession(useFetch)
+        const payload = { id: props.id }
 
-        const payload = { id: session.value?.user.id }
+        if (!payload.id) {
+            throw new Error('User ID is required to fetch user data')
+        }
 
         const { data: userData, error } = await useFetch('/api/user/user', {
             method: 'POST',
@@ -94,8 +107,4 @@ const reloadUser = async () => {
         console.error('Error fetching user data:', error)
     }
 }
-
-onMounted(async () => {
-    reloadUser()
-})
 </script>

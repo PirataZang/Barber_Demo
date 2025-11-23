@@ -1,13 +1,19 @@
 <template>
     <Modal label="Agendar" button-variant="solid" button-color="neutral" modal-title="Agendamentos" modal-width="500px">
         <UForm :schema="schema" :state="form" class="flex flex-col gap-2 space-y-4" @submit="onSubmit">
-            <UFormGroup label="Selecione a Data" name="date">
+            <UFormField label="Selecione a Data" name="date">
                 <UCalendar v-model="form.date" :is-date-unavailable="isDateUnavailable" color="neutral" class="text-white" />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup label="Selecione o Horário" name="time">
-                <USelect v-model="form.time" :options="availableTimes" placeholder="Selecione o horário" value-attribute="value" option-attribute="label" />
-            </UFormGroup>
+            <ClientOnly>
+                <UFormField label="Selecione o Horário" name="time">
+                    <USelect v-model="form.time" :options="availableTimes" placeholder="Selecione o horário" value-attribute="value" option-attribute="label" />
+                </UFormField>
+                
+                <template #fallback>
+                    <div class="h-10 w-24 bg-gray-600 rounded-lg animate-pulse"></div>
+                </template>
+            </ClientOnly>
 
             <UButton type="submit" label="Salvar Agendamento" :loading="isSaving" block />
         </UForm>
@@ -19,23 +25,32 @@ import { CalendarDate, type DateValue } from '@internationalized/date'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import * as v from 'valibot'
 
-// ---- Props ----
+// ==============================
+// 📦 PROPS & COMPONENT SETUP
+// ==============================
 
 const prop = defineProps<{
     serviceId: string
     userId?: string
+    // Intervalo de agendamento em minutos (e.g., 30, 60)
     time: number
 }>()
 
-// ---- Data & Funções Auxiliares ----
+const toast = useToast()
+
+// ==============================
+// ⚙️ LÓGICA & FUNÇÕES AUXILIARES
+// ==============================
 
 const today = new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())
+
+/** Verifica se a data é anterior ao dia atual. */
 const isDateUnavailable = (date: DateValue) => {
     return date.compare(today) < 0
 }
 
-const generateAvailableTimes = (startHour = 8, endHour = 18, intervalMinutes = 30) => {
-    // [Lógica para gerar horários]
+/** Gera a lista de horários com base no intervalo. */
+const generateAvailableTimes = (startHour = 8, endHour = 18, intervalMinutes: number) => {
     const times = []
     let currentTime = startHour * 60
     while (currentTime < endHour * 60) {
@@ -47,19 +62,41 @@ const generateAvailableTimes = (startHour = 8, endHour = 18, intervalMinutes = 3
     }
     return times
 }
-const availableTimes = generateAvailableTimes()
 
-const modelValueCalendar = shallowRef(today)
+// ==============================
+// 📊 ESTADO REATIVO (DATA)
+// ==============================
 
-const form = reactive({
-    date: modelValueCalendar.value as CalendarDate,
-    time: availableTimes[0]?.value || '08:00', // String "HH:mm"
+/** Lista de horários disponíveis, reativa à prop.time. */
+const availableTimes = computed(() => {
+    // Isso é reativo: sempre que prop.time muda, esta lista recalcula.
+    return generateAvailableTimes(8, 18, prop.time)
 })
 
 const isSaving = ref(false)
-const toast = useToast()
 
-// ---- Schema ----
+const form = reactive({
+    date: shallowRef(today).value as CalendarDate,
+    // O valor inicial é definido aqui com o primeiro horário baseado no prop.time.
+    time: availableTimes.value[0]?.value || '08:00',
+})
+
+// === NOVO WATCH: Reage APENAS se a prop 'time' MUDAR DINAMICAMENTE ===
+// Este watch garante que, se o componente já estiver aberto e a prop.time mudar
+// (o que recarrega availableTimes), o form.time seja resetado para o primeiro novo horário.
+watch(availableTimes, (newTimes, oldTimes) => {
+    // Verifica se a lista de horários realmente mudou (devido à prop.time)
+    // E se o horário atualmente selecionado não está mais na nova lista.
+    if (newTimes.length > 0 && oldTimes.length > 0 && newTimes[0].value !== oldTimes[0].value) {
+        form.time = newTimes[0].value
+    }
+})
+// === O WATCH IMEDIATO FOI REMOVIDO ===
+
+// ==============================
+// 📋 SCHEMA DE VALIDAÇÃO
+// ==============================
+
 const schema = v.object({
     date: v.pipe(v.any(), v.nonEmpty('A data é obrigatória')),
     time: v.pipe(v.string(), v.nonEmpty('O horário é obrigatório')),
@@ -67,41 +104,42 @@ const schema = v.object({
 
 type Schema = v.InferOutput<typeof schema>
 
-// ---- Funções de Submissão ----
+// ==============================
+// 🚀 FUNÇÃO DE SUBMISSÃO
+// ==============================
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-    const dateData = event.data.date as CalendarDate
-    const timeString = event.data.time as string
-
-    const [hours, minutes] = timeString.split(':').map(Number)
-
-    const finalDateTime = new Date(
-        dateData.year,
-        dateData.month - 1, // Mês baseado em 0
-        dateData.day,
-        hours,
-        minutes,
-        0
-    )
-
-    const finalPayload = {
-        date: finalDateTime.toISOString(),
-        userId: prop.userId,
-        serviceId: prop.serviceId,
-    }
+    isSaving.value = true
 
     try {
-        isSaving.value = true
+        const dateData = event.data.date as CalendarDate
+        const timeString = event.data.time as string
+        const [hours, minutes] = timeString.split(':').map(Number)
 
-        const save = await useFetch('/api/checkin/checkin-create', {
+        // Cria o objeto Date final, com o mês ajustado (base 0)
+        const finalDateTime = new Date(dateData.year, dateData.month - 1, dateData.day, hours, minutes, 0)
+
+        const finalPayload = {
+            date: finalDateTime.toISOString(),
+            userId: prop.userId,
+            serviceId: prop.serviceId,
+        }
+
+        await useFetch('/api/checkin/checkin-create', {
             method: 'POST',
             body: finalPayload,
         })
 
         toast.add({
-            title: 'Success',
+            title: 'Sucesso',
             description: 'Agendamento salvo com sucesso.',
             color: 'success',
+        })
+    } catch (error) {
+        toast.add({
+            title: 'Erro',
+            description: 'Não foi possível salvar o agendamento.',
+            color: 'error',
         })
     } finally {
         isSaving.value = false

@@ -13,8 +13,14 @@
             </div>
 
             <div class="absolute bottom-5 right-5">
-                <UButton v-if="!session?.user.id" @click="login" color="neutral">Login</UButton>
-                <CheckinModal v-if="session?.user.id" :userId="session.user.id" :time="props.hour" :serviceId="props.id"/>
+                <ClientOnly>
+                    <UButton v-if="!session?.user.id" @click="login" color="neutral">Login</UButton>
+                    <CheckinModal v-if="session?.user.id" :userId="session.user.id" :time="props.hour" :serviceId="props.id"/>
+
+                    <template #fallback>
+                        <div class="h-10 w-24 bg-gray-600 rounded-lg animate-pulse"></div>
+                    </template>
+                </ClientOnly>
             </div>
         </div>
     </div>
@@ -23,7 +29,6 @@
 <script setup lang="ts">
 import { authClient } from '~/lib/auth-client'
 
-// Não há mudanças aqui
 interface Props {
     id: string
     name: string
@@ -33,6 +38,7 @@ interface Props {
     hour: any
 }
 
+// O await continua sendo necessário para a busca inicial
 const { data: session } = await authClient.useSession(useFetch)
 
 const login = () => {
