@@ -1,44 +1,43 @@
 import { prisma } from '~/lib/prisma'
-import { createError, defineEventHandler, getQuery } from 'h3'
-
-interface Query {
-    date: string
-}
+import { createError, defineEventHandler, readBody } from 'h3'
 
 export default defineEventHandler(async (event) => {
     try {
-        const query = getQuery<Query>(event)
+        // Leia o body e procure por userId
+        const body = await readBody(event)
+        const userId = body?.userId as string | undefined
 
-        if (!query.date) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'A data é obrigatória (parâmetro "date").',
-            })
-        }
+        // Quando userId for fornecido, retorna todos os agendamentos desse usuário.
+        // Caso contrário, retorna todos os checkins.
+        const whereClause: any = {}
+        if (userId) whereClause.userId = userId
 
-        const selectedDate = new Date(query.date)
-
-        const startOfDay = selectedDate
-
-        const endOfDay = new Date(startOfDay)
-        endOfDay.setDate(endOfDay.getDate() + 1)
-        endOfDay.setMilliseconds(endOfDay.getMilliseconds() - 1)
-
-        const checkins = await prisma.checkin.findMany({
-            where: {
-                date: {
-                    gte: startOfDay, // Greater Than or Equal (Maior ou igual)
-                    lte: endOfDay, // Less Than or Equal (Menor ou igual)
+        const userBookings = await prisma.checkin.findMany({
+            where: whereClause,
+            select: {
+                id: true,
+                userId: true,
+                serviceId: true,
+                date: true,
+                canceled: true,
+                canceledAt: true,
+                createdAt: true,
+                updatedAt: true,
+                service: {
+                    select: {
+                        id: true,
+                        name: true,
+                        price: true,
+                        duration: true,
+                        description: true,
+                        image: true,
+                    },
                 },
             },
-            select: {
-                date: true,
-                serviceId: true,
-            },
+            orderBy: { date: 'asc' },
         })
 
-        // 3. Retorna os dados como JSON
-        return checkins
+        return userBookings
     } catch (error) {
         console.error('Erro ao buscar checkins no banco de dados:', error)
         throw createError({

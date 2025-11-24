@@ -32,8 +32,13 @@
 
                     <div ref="nav">
                         <nav class="space-y-3">
-                            <NuxtLink to="/" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">dashboard</NuxtLink>
-                            <NuxtLink v-if="session?.user.id && session?.user.isAdmin" to="/booking" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Agendamentos</NuxtLink>
+                            <NuxtLink @click="$emit('closeSidebar')" to="/" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">dashboard</NuxtLink>
+                            <NuxtLink @click="$emit('closeSidebar')" to="/services" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Serviços</NuxtLink>
+                            <NuxtLink @click="$emit('closeSidebar')" to="/booking" v-if="session?.user.id" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Agendamentos</NuxtLink>
+                        </nav>
+                        <nav class="space-y-3" v-if="session.user.isAdmin">
+                            <hr class="my-2" />
+                            <NuxtLink @click="$emit('closeSidebar')" to="/allBooking" class="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition duration-200">Todos os Agendamentos</NuxtLink>
                         </nav>
                     </div>
                 </div>

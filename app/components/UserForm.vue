@@ -1,5 +1,5 @@
 <template>
-    <Modal label="Configurações" button-variant="subtle" modal-title="Configurações do Usuário" @open="reloadUser"  description="Configurações relacionadas ao usuário">
+    <Modal label="Configurações" button-variant="subtle" modal modal-title="Configurações do Usuário" @open="reloadUser"  description="Configurações relacionadas ao usuário" modal-width="w-auto max-w-lg">
         <UForm :schema="schema" :state="form" class="flex flex-col gap-2 space-y-4" @submit="onSubmit">
             <div class="flex flex-row gap-4">
                 <ClientOnly>

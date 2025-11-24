@@ -9,6 +9,8 @@
                 <slot />
             </main>
         </div>
+        
+        <TheFooter />
     </div>
 </template>
 
