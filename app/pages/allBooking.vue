@@ -7,7 +7,7 @@
         </div>
 
         <div v-else-if="bookings.length > 0" class="space-y-4">
-            <CardBooking v-for="booking in bookings" :key="booking.id" :booking="booking" @onCancel="handleBookingCancel" />
+            <BarberBookingCard v-for="booking in bookings" :key="booking.id" :booking="booking" @onCancel="handleBookingCancel" />
         </div>
 
         <div v-else class="text-gray-500">Nenhum agendamento encontrado.</div>
@@ -17,27 +17,40 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'default' })
 
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { authClient } from '~/lib/auth-client'
 
 // Fetch session from authClient
 const { data: session } = await authClient.useSession(useFetch)
 
-// Fetch all bookings using useFetch with SSR
-const { data: bookingsData, pending, error } = await useFetch('/api/checkin/checkin', {
+// Fetch today's bookings using useFetch with SSR
+const todayIso = new Date().toISOString()
+const { data: bookingsData, pending, error } = await useFetch(`/api/checkin/checkin?date=${encodeURIComponent(todayIso)}`, {
     method: 'POST',
-    body: {}, // Empty body = fetch all bookings
+    body: {},
     default: () => [],
 })
 
-// Reactive bookings list
-const bookings = ref(bookingsData.value ?? [])
+// Reactive bookings list with expired filter
+const bookings = ref<any[]>([])
 
-// Watch for data changes
+function filterRecent(list: any[] = []) {
+    return list.filter((b: any) => {
+        try {
+            const bookingTime = new Date(b.date).getTime()
+            return Date.now() - bookingTime < 60 * 60 * 1000
+        } catch (e) {
+            return true
+        }
+    })
+}
+
+// Initialize with filtered data
+bookings.value = filterRecent(bookingsData.value ?? [])
+
+// Watch for data changes and update with filtered results
 watch(() => bookingsData.value, (newData) => {
-    if (newData) {
-        bookings.value = newData
-    }
+    bookings.value = filterRecent(newData ?? [])
 }, { immediate: true })
 
 function handleBookingCancel(id: string) {

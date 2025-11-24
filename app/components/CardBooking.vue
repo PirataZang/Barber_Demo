@@ -16,56 +16,55 @@
                 <span class="text-2xl font-extrabold text-gray-900 dark:text-white"> R$ {{ formattedPrice }} </span>
             </div>
 
-            <div class="flex justify-between items-center text-gray-700 dark:text-gray-300">
+            <div class="grid grid-cols-1 gap-2 text-gray-700 dark:text-gray-300">
                 <div class="flex items-center gap-2">
                     <UIcon name="i-heroicons-calendar-days-20-solid" class="w-5 h-5 text-indigo-500" />
-                    <span>Data: {{ formattedDate }}</span>
+                    <div class="flex flex-col">
+                        <span class="text-sm">Data</span>
+                        <span class="font-medium">{{ formattedDate }}</span>
+                    </div>
                 </div>
+
                 <div class="flex items-center gap-2">
                     <UIcon name="i-heroicons-clock-20-solid" class="w-5 h-5 text-indigo-500" />
-                    <span>Hora: {{ formattedTime }}</span>
+                    <div class="flex flex-col">
+                        <span class="text-sm">Hora</span>
+                        <span class="font-medium">{{ formattedTime }}</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-end">
-            <span class="text-sm text-gray-400 dark:text-gray-600"> Ações em breve... </span>
+            <UButton
+                icon="i-heroicons-trash-20-solid"
+                color="error"
+                variant="outline"
+                :loading="isCancelling"
+                @click="cancelBooking"
+            >Cancelar</UButton>
         </div>
     </UCard>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
-// Removida a importação 'swal' e 'toast'
-
-// Assumindo tipos do Prisma
 import type { Service, Checkin } from '@prisma/client'
-
-// Define a estrutura esperada do agendamento, incluindo o serviço
 interface BookingWithService extends Checkin {
     service: Pick<Service, 'name' | 'price' | 'duration'>
 }
 
 const props = defineProps<{
     booking: Partial<BookingWithService> & { id: string }
-    // Removida a prop 'onCancel'
 }>()
 
-// bookingLocal reativo para carregar info do service
 const bookingLocal = ref<Partial<BookingWithService> & { id: string }>(props.booking as any)
 
-// Removida a ref 'isCancelling'
-
-// --------------------------------------------------------
-// Lógica de Enriquecimento de Dados (Mantida)
-// --------------------------------------------------------
 onMounted(async () => {
     try {
-        // Se o objeto booking veio incompleto, tenta buscar a informação de serviço
         if (!bookingLocal.value.service && bookingLocal.value.date && bookingLocal.value.userId) {
             const dateStr = new Date(bookingLocal.value.date as any).toISOString()
 
-            // ATENÇÃO: Se o seu backend não aceita GET com body, mude para query params
             const { data, error } = await useFetch('/api/checkin?date=' + encodeURIComponent(dateStr), {
                 method: 'GET',
                 body: { userId: bookingLocal.value.userId },
@@ -79,7 +78,6 @@ onMounted(async () => {
             }
         }
     } catch (e) {
-        // Silencioso. A exibição usará os fallbacks (— Serviço —)
     }
 })
 
@@ -113,7 +111,30 @@ const formattedTime = computed(() => {
 })
 
 // --------------------------------------------------------
-// Lógica de Cancelamento (REMOVIDA)
+// Lógica de Cancelamento
 // --------------------------------------------------------
-// As funções confirmCancel e handleCancel foram removidas.
+import { ref } from 'vue'
+const emit = defineEmits(['onCancel'])
+const isCancelling = ref(false)
+
+async function cancelBooking() {
+    if (!bookingLocal.value.id) return
+    isCancelling.value = true
+    try {
+        const { error } = await useFetch('/api/checkin/checkin-cancel', {
+            method: 'POST',
+            body: { id: bookingLocal.value.id },
+        })
+        if (error.value) {
+            // opcional: mostrar toast de erro
+            isCancelling.value = false
+            return
+        }
+        emit('onCancel', bookingLocal.value.id)
+    } catch (e) {
+        // opcional: mostrar toast de erro
+    } finally {
+        isCancelling.value = false
+    }
+}
 </script>

@@ -2,14 +2,16 @@
     <UContainer class="py-8 space-y-6">
         <h1 class="text-3xl font-bold">Meus Agendamentos</h1>
 
-        <div v-if="loading" class="space-y-4">
-            <USkeleton v-for="n in 3" :key="n" class="h-28 w-full rounded-xl" />
-        </div>
+        <ClientOnly>
+            <div v-if="loading" class="space-y-4">
+                <USkeleton v-for="n in 3" :key="n" class="h-28 w-full rounded-xl" />
+            </div>
 
-        <div v-else class="space-y-4">
-            <CardBooking v-for="booking in bookings" :key="booking.id" :booking="booking" @onCancel="handleBookingCancel" />
-            <div v-if="!bookings.length" class="text-gray-500">Nenhum agendamento encontrado.</div>
-        </div>
+            <div v-else class="space-y-4">
+                <CardBooking v-for="booking in bookings" :key="booking.id" :booking="booking" @onCancel="handleBookingCancel" />
+                <div v-if="!bookings.length" class="text-gray-500">Nenhum agendamento encontrado.</div>
+            </div>
+        </ClientOnly>
     </UContainer>
 </template>
 
@@ -20,6 +22,7 @@ import { ref, onMounted } from 'vue'
 import { authClient } from '~/lib/auth-client'
 
 const { data: session } = await authClient.useSession(useFetch)
+
 const userId = session.value?.user?.id
 const bookings = ref<any[]>([])
 const loading = ref(false)

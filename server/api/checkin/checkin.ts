@@ -1,16 +1,36 @@
 import { prisma } from '~/lib/prisma'
-import { createError, defineEventHandler, readBody } from 'h3'
+import { createError, defineEventHandler, readBody, getQuery } from 'h3'
 
 export default defineEventHandler(async (event) => {
     try {
-        // Leia o body e procure por userId
+        // Leia query (opcional date) e body (opcional userId)
+        const query = getQuery(event)
         const body = await readBody(event)
         const userId = body?.userId as string | undefined
+        const dateParam = (query as any)?.date as string | undefined
 
-        // Quando userId for fornecido, retorna todos os agendamentos desse usuário.
-        // Caso contrário, retorna todos os checkins.
+        // Build where clause: optional userId, optional date range
         const whereClause: any = {}
         if (userId) whereClause.userId = userId
+        // By default, exclude canceled checkins unless explicitly requested
+        if (!body?.includeCanceled) {
+            whereClause.canceled = false
+        }
+
+        if (dateParam) {
+            const selectedDate = new Date(dateParam)
+            const startOfDay = new Date(selectedDate)
+            startOfDay.setHours(0, 0, 0, 0)
+
+            const endOfDay = new Date(startOfDay)
+            endOfDay.setDate(endOfDay.getDate() + 1)
+            endOfDay.setMilliseconds(endOfDay.getMilliseconds() - 1)
+
+            whereClause.date = {
+                gte: startOfDay,
+                lte: endOfDay,
+            }
+        }
 
         const userBookings = await prisma.checkin.findMany({
             where: whereClause,
