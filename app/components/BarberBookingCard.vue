@@ -19,8 +19,6 @@
         </span>
       </div>
 
-      <UDivider />
-
       <div class="grid grid-cols-1 gap-1 text-gray-700 dark:text-gray-300">
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-calendar-days-20-solid" class="w-5 h-5 text-indigo-500" />
