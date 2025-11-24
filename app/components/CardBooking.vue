@@ -1,8 +1,8 @@
 <template>
-    <UCard class="w-full shadow-xl p-0 hover:border-indigo-400 transition-all duration-300">
+    <UCard :class="['w-full shadow-xl p-0 transition-all duration-300', bookingLocal.canceled ? 'opacity-70 bg-gray-50 dark:bg-gray-900' : 'hover:border-indigo-400']">
         <div class="p-4 flex justify-between items-center border-b border-gray-100 dark:border-gray-800">
             <h3 class="text-xl font-bold text-gray-900 dark:text-white">Detalhes do Agendamento</h3>
-            <UBadge color="indigo" variant="subtle">Ativo</UBadge>
+            <UBadge :color="bookingLocal.canceled ? 'error' : 'primary'" variant="subtle">{{ bookingLocal.canceled ? 'Cancelado' : 'Ativo' }}</UBadge>
         </div>
 
         <div class="p-4 space-y-3">
@@ -35,23 +35,21 @@
             </div>
         </div>
 
-        <div class="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-end">
-            <UButton
-                icon="i-heroicons-trash-20-solid"
-                color="error"
-                variant="outline"
-                :loading="isCancelling"
-                @click="cancelBooking"
-            >Cancelar</UButton>
+        <div class="p-4 border-t border-gray-100 dark:border-gray-800">
+            <div class="flex justify-between items-center w-full">
+                <div>
+                    <UButton v-if="!bookingLocal.canceled" icon="i-heroicons-trash-20-solid" color="error" variant="outline" :loading="isCancelling" @click="cancelBooking">Cancelar</UButton>
+                </div>
+            </div>
         </div>
     </UCard>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
-import type { Service, Checkin } from '@prisma/client'
+import type { BarberService, Checkin } from '@prisma/client'
 interface BookingWithService extends Checkin {
-    service: Pick<Service, 'name' | 'price' | 'duration'>
+    service: Pick<BarberService, 'name' | 'price' | 'duration'>
 }
 
 const props = defineProps<{
@@ -77,8 +75,7 @@ onMounted(async () => {
                 }
             }
         }
-    } catch (e) {
-    }
+    } catch (e) {}
 })
 
 // --------------------------------------------------------
@@ -92,7 +89,8 @@ const formattedPrice = computed(() => {
 
 const formattedDate = computed(() => {
     // Busca a data, priorizando a informação enriquecida local
-    const date = new Date(bookingLocal.value.date ?? props.booking.date)
+    const raw = bookingLocal.value.date ?? props.booking.date
+    const date = raw ? new Date(raw as any) : new Date()
     return date.toLocaleDateString('pt-BR', {
         day: 'numeric',
         month: 'long',
@@ -102,7 +100,8 @@ const formattedDate = computed(() => {
 
 const formattedTime = computed(() => {
     // Busca a hora, priorizando a informação enriquecida local
-    const date = new Date(bookingLocal.value.date ?? props.booking.date)
+    const raw = bookingLocal.value.date ?? props.booking.date
+    const date = raw ? new Date(raw as any) : new Date()
     return date.toLocaleTimeString('pt-BR', {
         hour: '2-digit',
         minute: '2-digit',
@@ -113,7 +112,6 @@ const formattedTime = computed(() => {
 // --------------------------------------------------------
 // Lógica de Cancelamento
 // --------------------------------------------------------
-import { ref } from 'vue'
 const emit = defineEmits(['onCancel'])
 const isCancelling = ref(false)
 
@@ -137,4 +135,6 @@ async function cancelBooking() {
         isCancelling.value = false
     }
 }
+
+const isCanceled = computed(() => Boolean(bookingLocal.value?.canceled))
 </script>
