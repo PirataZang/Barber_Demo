@@ -20,7 +20,7 @@
                 </div>
 
                 <ClientOnly>
-                    <UButton v-if="!session?.user?.id" @click="login" color="amber" label="Login" icon="i-heroicons-arrow-right-start-on-rectangle-20-solid" />
+                    <UButton v-if="!session?.user?.id" @click="login" color="neutral" icon="i-heroicons-arrow-right-start-on-rectangle-20-solid">Login</UButton>
 
                     <CheckinModal v-else :userId="session.user.id" :time="props.hour" :serviceId="props.id" label="Agendar" />
 

@@ -1,5 +1,5 @@
 <template>
-    <Modal label="Agendar" button-variant="solid" button-color="neutral" modal-title="Agendamentos" modal-width="w-auto max-w-sm">
+    <Modal label="Agendar" button-variant="solid" button-color="neutral" modal-title="Agendamentos" modal-width="w-auto max-w-sm" @open="refresh()">
         <UForm :schema="schema" :state="form" class="flex flex-col gap-2 space-y-4" @submit="onSubmit">
             <UFormField label="Selecione a Data" name="date">
                 <UCalendar locale="pt-BR" :year-controls="false" v-model="form.date" :is-date-unavailable="isDateUnavailable" color="neutral" class="text-white" />
@@ -10,8 +10,9 @@
                     <div class="flex gap-2 overflow-x-auto time-scroll-hide whitespace-nowrap py-1">
                         <UButton v-for="timeOption in availableTimes" :key="timeOption.value" :label="timeOption.label" :variant="form.time === timeOption.value ? 'solid' : 'outline'" color="neutral" @click="form.time = timeOption.value" size="lg" class="flex-shrink-0" />
                     </div>
+
                     <span v-if="pending" class="text-xs text-gray-400">Carregando horários...</span>
-                    <span v-else-if="availableTimes.length === 0" class="text-xs text-red-400">Nenhum horário disponível para esta data.</span>
+                    <span v-else-if="availableTimes.length === 0" class="text-xs text-red-400"> Nenhum horário disponível para esta data. </span>
                 </UFormField>
 
                 <template #fallback>
@@ -39,18 +40,11 @@ const toast = useToast()
 const today = new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())
 
 const isDateUnavailable = (date: DateValue) => {
-    if (date.compare(today) < 0) {
-        return true
-    }
-    const jsDate = date.toDate(new Date().timeZone || 'UTC')
-    if (jsDate.getDay() < 0 || jsDate.getDay() >= 6) {
-        return true
-    }
-    return false
-}
+    if (date.compare(today) < 0) return true
 
-// Nota: A lista de feriados (holidays2025) e a função isHoliday()
-// foram removidas, conforme sua solicitação.
+    const jsDate = date.toDate(new Date().timeZone || 'UTC')
+    return jsDate.getDay() === 0
+}
 
 const generateAllPossibleTimes = (startHour = 8, endHour = 18, intervalMinutes: number) => {
     const times = []
@@ -58,19 +52,13 @@ const generateAllPossibleTimes = (startHour = 8, endHour = 18, intervalMinutes: 
     const endMinutes = endHour * 60
 
     while (currentTime < endMinutes) {
-        const hour = Math.floor(currentTime / 60) % 24
+        const hour = Math.floor(currentTime / 60)
         const minute = currentTime % 60
         const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
         times.push({ label: timeString, value: timeString })
         currentTime += intervalMinutes
     }
     return times
-}
-
-const calendarDateToISOString = (date: CalendarDate): string => {
-    const jsDate = new Date(date.year, date.month - 1, date.day)
-    jsDate.setMinutes(jsDate.getMinutes() - jsDate.getTimezoneOffset())
-    return jsDate.toISOString()
 }
 
 const isSaving = ref(false)
@@ -80,50 +68,73 @@ const form = reactive({
     time: '',
 })
 
+// 🔥 Agora carrega TODOS os checkins (sem filtro de userId)
 const {
-    data: bookedCheckins,
+    data: allCheckins,
     pending,
     refresh,
 } = await useFetch('/api/checkin/checkin', {
-    query: {
-        date: computed(() => calendarDateToISOString(form.date)),
-    },
     immediate: true,
     lazy: true,
 })
 
+// 🔥 Filtro dos checkins do mesmo dia selecionado E mesmo serviço
+const checkinsForSelectedDay = computed(() => {
+    if (!allCheckins.value) return []
+
+    return allCheckins.value.filter((c) => {
+        const d = new Date(c.date)
+        // Filtra apenas checkins do mesmo dia e mesmo serviço
+        return (
+            d.getFullYear() === form.date.year &&
+            d.getMonth() + 1 === form.date.month &&
+            d.getDate() === form.date.day &&
+            c.serviceId === prop.serviceId
+        )
+    })
+})
+
 const availableTimes = computed(() => {
     const allPossibleTimes = generateAllPossibleTimes(8, 18, prop.time)
+    const now = new Date()
+    const selectedIsToday =
+        now.getFullYear() === form.date.year &&
+        now.getMonth() === form.date.month - 1 &&
+        now.getDate() === form.date.day
 
-    // A espera e a ausência de checkins ainda retornam todos os horários
-    if (pending.value || !bookedCheckins.value || bookedCheckins.value.length === 0) {
-        return allPossibleTimes
-    }
+    if (pending.value || !checkinsForSelectedDay.value) return allPossibleTimes
 
-    const occupiedTimes = new Set<string>()
+    // Build set of occupied times for this service on selected day
+    const occupied = new Set(
+        checkinsForSelectedDay.value.map((c) => {
+            const d = new Date(c.date)
+            const h = d.getHours().toString().padStart(2, '0')
+            const m = d.getMinutes().toString().padStart(2, '0')
+            return `${h}:${m}`
+        })
+    )
 
-    for (const checkin of bookedCheckins.value) {
-        const checkinDate = new Date(checkin.date)
+    // Filter out occupied times and past times (if today)
+    return allPossibleTimes.filter((timeOption) => {
+        // exclude occupied
+        if (occupied.has(timeOption.value)) return false
 
-        const hour = checkinDate.getUTCHours().toString().padStart(2, '0')
-        const minute = checkinDate.getUTCMinutes().toString().padStart(2, '0')
-        occupiedTimes.add(`${hour}:${minute}`)
-    }
+        // exclude past times only when selected date is today
+        if (selectedIsToday) {
+            const [h, m] = timeOption.value.split(':').map(Number)
+            const optionDate = new Date(form.date.year, form.date.month - 1, form.date.day, h, m)
+            if (optionDate < now) return false
+        }
 
-    return allPossibleTimes.filter((time) => !occupiedTimes.has(time.value))
+        return true
+    })
 })
 
 watch(
     availableTimes,
-    (newTimes) => {
-        if (newTimes.length > 0) {
-            const currentTimeIsAvailable = newTimes.some((t) => t.value === form.time)
-            if (!currentTimeIsAvailable || !form.time) {
-                form.time = newTimes[0].value
-            }
-        } else {
-            form.time = ''
-        }
+    (list) => {
+        if (list.length === 0) form.time = ''
+        else if (!list.some((t) => t.value === form.time)) form.time = list[0].value
     },
     { immediate: true }
 )
@@ -137,22 +148,16 @@ type Schema = v.InferOutput<typeof schema>
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
     isSaving.value = true
-
     try {
         const dateData = event.data.date as CalendarDate
-        const timeString = event.data.time as string
-        const [hours, minutes] = timeString.split(':').map(Number)
+        const [hours, minutes] = event.data.time.split(':').map(Number)
 
-        // 1. Cria o objeto Date no FUSO HORÁRIO LOCAL (navegador)
-        const localDateTime = new Date(dateData.year, dateData.month - 1, dateData.day, hours, minutes, 0)
-
-        // 2. Neutraliza o offset do fuso horário local antes de converter para ISO
-        // Isso força a string ISO resultante (que é UTC) a ser exatamente o horário local desejado.
-        const timezoneOffset = localDateTime.getTimezoneOffset()
-        const finalDateTime = new Date(localDateTime.getTime() - timezoneOffset * 60000)
+        const local = new Date(dateData.year, dateData.month - 1, dateData.day, hours, minutes)
+        const offset = local.getTimezoneOffset()
+        const finalDateTime = new Date(local.getTime() - offset * 60000)
 
         const finalPayload = {
-            date: finalDateTime.toISOString(), // Ex: '2025-11-23T14:00:00.000Z'
+            date: finalDateTime.toISOString(),
             userId: prop.userId,
             serviceId: prop.serviceId,
         }
@@ -164,26 +169,20 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
         if (error.value) {
             toast.add({
-                title: 'Erro',
-                description: error.value.message || 'Não foi possível salvar o agendamento.',
+                title: 'Horário indisponível',
+                description: 'Já existe um agendamento neste horário.',
                 color: 'error',
             })
+            return
         }
 
         toast.add({
             title: 'Sucesso',
-            description: 'Agendamento salvo com sucesso.',
+            description: 'Agendamento salvo.',
             color: 'success',
         })
-        isSaving.value = false
+
         return navigateTo('/booking')
-    } catch (error) {
-        toast.add({
-            title: 'Erro',
-            description: 'Não foi possível salvar o agendamento.',
-            color: 'error',
-        })
-        console.error('Erro ao salvar agendamento:', error)
     } finally {
         isSaving.value = false
     }

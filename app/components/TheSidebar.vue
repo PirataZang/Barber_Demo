@@ -1,7 +1,7 @@
 <template>
     <div>
         <Transition name="fade">
-            <div v-if="isOpen" @click="$emit('closeSidebar')" class="absolute inset-0 bg-black opacity-85 z-40"></div>
+            <div v-if="isOpen" @click="$emit('closeSidebar')" class="absolute inset-0 blur-2xl z-40"></div>
         </Transition>
 
         <Transition name="slide">
@@ -42,8 +42,8 @@
                         </nav>
                     </div>
                 </div>
-                <div ref="footer" class="p-1">
-                    <NuxtImg src="/logo.jpg" class="object-cover rounded" />
+                <div ref="footer" class="p-1 bg-amber-50">
+                    <NuxtImg src="/logo.png" class="w-full h-[100px] object-contain rounded" />
                 </div>
             </div>
         </Transition>
