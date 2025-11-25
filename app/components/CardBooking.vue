@@ -37,7 +37,7 @@
 
         <div class="p-4 border-t border-gray-100 dark:border-gray-800">
             <div class="flex justify-between items-center w-full">
-                <div>
+                <div class="flex gap-2 content-end">
                     <UButton v-if="!bookingLocal.canceled" icon="i-heroicons-trash-20-solid" color="error" variant="outline" :loading="isCancelling" @click="cancelBooking">Cancelar</UButton>
                 </div>
             </div>
