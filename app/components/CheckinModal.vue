@@ -28,6 +28,8 @@
 <script setup lang="ts">
 import { CalendarDate, type DateValue } from '@internationalized/date'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import collect from 'collect.js'
+import { time } from 'console'
 import * as v from 'valibot'
 
 const prop = defineProps<{
@@ -74,33 +76,24 @@ const {
     pending,
     refresh,
 } = await useFetch('/api/checkin/checkin', {
-    immediate: true,
-    lazy: true,
+    method: 'POST',
 })
 
-// 🔥 Filtro dos checkins do mesmo dia selecionado E mesmo serviço
+// 🔥 Filtro dos checkins do mesmo dia selecionado E mesmo serviço (apenas ATIVOS)
 const checkinsForSelectedDay = computed(() => {
     if (!allCheckins.value) return []
 
     return allCheckins.value.filter((c) => {
         const d = new Date(c.date)
-        // Filtra apenas checkins do mesmo dia e mesmo serviço
-        return (
-            d.getFullYear() === form.date.year &&
-            d.getMonth() + 1 === form.date.month &&
-            d.getDate() === form.date.day &&
-            c.serviceId === prop.serviceId
-        )
+        // Filtra apenas checkins do mesmo dia, mesmo serviço e que NÃO estão cancelados
+        return d.getFullYear() === form.date.year && d.getMonth() + 1 === form.date.month && d.getDate() === form.date.day && c.serviceId === prop.serviceId && c.canceled === false
     })
 })
 
 const availableTimes = computed(() => {
     const allPossibleTimes = generateAllPossibleTimes(8, 18, prop.time)
     const now = new Date()
-    const selectedIsToday =
-        now.getFullYear() === form.date.year &&
-        now.getMonth() === form.date.month - 1 &&
-        now.getDate() === form.date.day
+    const selectedIsToday = now.getFullYear() === form.date.year && now.getMonth() === form.date.month - 1 && now.getDate() === form.date.day
 
     if (pending.value || !checkinsForSelectedDay.value) return allPossibleTimes
 
@@ -119,13 +112,29 @@ const availableTimes = computed(() => {
         // exclude occupied
         if (occupied.has(timeOption.value)) return false
 
+        const timesFormated = collect(allCheckins.value)
+            .pluck('date')
+            // Se o 'time' for uma string como '2025-11-26T10:00:00.000Z'
+            .map((time: any) => {
+                // 1. Converte para string se ainda não for
+                let timeString = String(time)
+
+                // 2. Remove o 'Z' (se estiver presente) para evitar interpretação como UTC
+                if (timeString.endsWith('Z')) {
+                    timeString = timeString.slice(0, -1)
+                }
+
+                let dateHour = new Date(timeString)
+                return dateHour.toLocaleString()
+            })
+            .all()
+
         // exclude past times only when selected date is today
         if (selectedIsToday) {
             const [h, m] = timeOption.value.split(':').map(Number)
             const optionDate = new Date(form.date.year, form.date.month - 1, form.date.day, h, m)
-            if (optionDate < now) return false
+            if (optionDate < now || timesFormated.includes(optionDate.toLocaleString())) return false
         }
-
         return true
     })
 })

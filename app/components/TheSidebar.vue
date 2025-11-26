@@ -9,7 +9,7 @@
                 <div>
                     <div class="p-6 bg-gray-900 flex flex-col gap-5">
                         <div class="flex justify-between gap-4 items-center">
-                            <UButton v-if="!session?.user.id" @click="login" color="success">Login</UButton>
+                            <UButton v-if="!session?.user.id" @click="login" color="neutral">Login</UButton>
                             <UUser
                                 v-if="session?.user.id"
                                 :name="session?.user.name"
@@ -24,9 +24,9 @@
                                 </svg>
                             </button>
                         </div>
-                        <div class="flex gap-2">
-                            <UButton v-if="session?.user.id" @click="logout" class="w-[70px]" color="error">Logout</UButton>
-                            <UserForm v-if="session?.user.id" :id="session?.user.id" colorButton="secondary" />
+                        <div v-if="session?.user.id" class="flex gap-2">
+                            <UButton @click="logout" class="w-[70px]" color="error">Logout</UButton>
+                            <UserForm :id="session?.user.id" colorButton="secondary" />
                         </div>
                     </div>
 

@@ -1,7 +1,7 @@
 <template>
     <UContainer class="py-8 space-y-8">
         <div class="text-center pt-4">
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Nossos Serviços</h1>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-400">Nossos Serviços</h1>
             <p class="text-lg text-gray-600 dark:text-gray-400 mt-2">Escolha seu próximo corte ou tratamento e agende agora.</p>
         </div>
 
