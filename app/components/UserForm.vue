@@ -1,5 +1,5 @@
 <template>
-    <Modal label="Configurações" button-variant="subtle" modal modal-title="Configurações do Usuário" @open="reloadUser"  description="Configurações relacionadas ao usuário" modal-width="w-auto max-w-lg">
+    <Modal label="Configurações" button-variant="subtle" modal modal-title="Configurações do Usuário" @open="reloadUser" description="Configurações relacionadas ao usuário" modal-width="w-auto max-w-lg">
         <UForm :schema="schema" :state="form" class="flex flex-col gap-2 space-y-4" @submit="onSubmit">
             <div class="flex flex-row gap-4">
                 <ClientOnly>
@@ -23,7 +23,6 @@
 <script setup lang="ts">
 import * as v from 'valibot'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { authClient } from '~/lib/auth-client'
 
 // ---- Schema ----
 const schema = v.object({
@@ -48,16 +47,13 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     try {
         isSaving.value = true
 
-        const user = await useFetch('/api/user/user-update', {
+        const { data: user } = await useFetch('/api/user/user-update', {
             method: 'POST',
             body: {
-                id: (await authClient.getSession()).data?.user.id,
+                id: props.id,
                 name: event.data.name,
             },
         })
-
-        // Simulação de chamada para salvar
-        await new Promise((res) => setTimeout(res, 1000))
 
         toast.add({
             title: 'Success',

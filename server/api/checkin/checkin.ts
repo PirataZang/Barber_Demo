@@ -53,6 +53,13 @@ export default defineEventHandler(async (event) => {
                         image: true,
                     },
                 },
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
             },
             orderBy: { date: 'asc' },
         })

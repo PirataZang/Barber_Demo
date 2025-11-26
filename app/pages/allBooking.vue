@@ -30,7 +30,6 @@ definePageMeta({ layout: 'admin' })
 
 import collect from 'collect.js'
 import { ref, computed, watch } from 'vue'
-import { authClient } from '~/lib/auth-client'
 
 const todayIso = new Date().toISOString()
 const {
@@ -40,7 +39,7 @@ const {
     error,
 } = await useFetch(`/api/checkin/checkin?date=${encodeURIComponent(todayIso)}`, {
     method: 'POST',
-    body: { includeCanceled: true },
+    body: { includeCanceled: false },
     default: () => [],
     server: true,
 })
