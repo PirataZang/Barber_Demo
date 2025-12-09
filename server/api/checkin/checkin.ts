@@ -7,7 +7,8 @@ export default defineEventHandler(async (event) => {
         const query = getQuery(event)
         const body = await readBody(event)
         const userId = body?.userId as string | undefined
-        const dateParam = (query as any)?.date as string | undefined
+        const dateStart = query?.dateStart as string | undefined
+        const dateEnd = query?.dateEnd as string | undefined
 
         // Build where clause: optional userId, optional date range
         const whereClause: any = {}
@@ -17,18 +18,21 @@ export default defineEventHandler(async (event) => {
             whereClause.canceled = false
         }
 
-        if (dateParam) {
-            const selectedDate = new Date(dateParam)
-            const startOfDay = new Date(selectedDate)
-            startOfDay.setHours(0, 0, 0, 0)
-
-            const endOfDay = new Date(startOfDay)
-            endOfDay.setDate(endOfDay.getDate() + 1)
-            endOfDay.setMilliseconds(endOfDay.getMilliseconds() - 1)
-
+        if (dateStart || dateEnd) {
             whereClause.date = {
-                gte: startOfDay,
-                lte: endOfDay,
+                gte: null,
+                lte: null,
+            }
+            if (dateStart) {
+                const startOfDay = new Date(dateStart)
+                startOfDay.setUTCHours(0, 0, 0, 0)
+                whereClause.date.gte = startOfDay.toISOString() // '2025-12-08T00:00:00.000Z'
+            }
+
+            if (dateEnd) {
+                const endOfDay = new Date(dateEnd)
+                endOfDay.setUTCHours(23, 59, 59, 999)
+                whereClause.date.lte = endOfDay.toISOString() // '2025-12-08T23:59:59.999Z'
             }
         }
 
