@@ -6,12 +6,11 @@ export default defineNuxtConfig({
     css: ['~/assets/css/main.css'],
 
     runtimeConfig: {
-        mercadopagoWebhookSecret: '',
-        mercadopagoAccessToken: 'APP_USR-3762980771464500-111714-90990d62a07a27146e9c552717715982-2988184892',
+        mercadopagoWebhookSecret: process.env.NUXT_MERCADOPAGO_WEBHOOK_SECRET,
+        mercadopagoAccessToken: process.env.NUXT_MERCADOPAGO_ACCESS_TOKEN,
         public: {
             baseURL: '',
-            // Exponha a chave pública para o frontend
-            mpPublicKey: process.env.NUXT_PUBLIC_MERCADO_PAGO_KEY,
+            mercadopagoPublicKey: process.env.NUXT_PUBLIC_MERCADOPAGO_KEY,
         },
     },
     app: {
